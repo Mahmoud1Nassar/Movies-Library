@@ -34,6 +34,28 @@ app.get('/trending', async (req, res) => {
     }
 });
 
+// Route to search movies
+app.get('/search', async (req, res) => {
+    const config = {
+        method: 'get',
+        url: `${BASE_URL}/search/movie?query=JACK+Reacher&api_key=${API_KEY}&language=en-US`
+    };
+
+    try {
+        const response = await axios(config);
+        const movies = response.data.results.map(movie => ({
+            id: movie.id,
+            title: movie.title,
+            release_date: movie.release_date,
+            poster_path: movie.poster_path,
+            overview: movie.overview
+        }));
+        res.json(movies);
+    } catch (error) {
+        res.status(500).json({ message: "Unable to search movies", error: error.toString() });
+    }
+});
+
 // Route to get popular movies
 app.get('/popular-movies', async (req, res) => {
     const config = {
@@ -113,4 +135,47 @@ app.use((err, req, res, next) => {
 // Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+});
+
+
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_DATABASE,
+  port: process.env.DB_PORT,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+
+// Middlewares to parse JSON and urlencoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.post('/addMovie', async (req, res) => {
+    const { title, poster_path, overview, comments } = req.body;
+    const insertQuery = `INSERT INTO movies(title, poster_path, overview, comments) VALUES($1, $2, $3, $4) RETURNING *;`;
+    
+    try {
+        const result = await pool.query(insertQuery, [title, poster_path, overview, comments]);
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ message: "Unable to add movie to database", error: error.toString() });
+    }
+});
+
+
+app.get('/getMovies', async (req, res) => {
+    const selectQuery = `SELECT * FROM movies;`;
+
+    try {
+        const result = await pool.query(selectQuery);
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ message: "Unable to retrieve movies from database", error: error.toString() });
+    }
 });
