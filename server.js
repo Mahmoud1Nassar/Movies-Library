@@ -12,6 +12,8 @@ const PORT = process.env.PORT || 3000;
 const BASE_URL = 'https://api.themoviedb.org/3';
 // Bearer token from .env file
 const API_KEY = process.env.API_KEY;
+//search bar
+const SEARCH_BAR = 'JACK+Reacher';
 // Route to get trending movies
 app.get('/trending', async (req, res) => {
     const config = {
@@ -38,7 +40,7 @@ app.get('/trending', async (req, res) => {
 app.get('/search', async (req, res) => {
     const config = {
         method: 'get',
-        url: `${BASE_URL}/search/movie?query=JACK+Reacher&api_key=${API_KEY}&language=en-US`
+        url: `${BASE_URL}/search/movie?query=${SEARCH_BAR}&api_key=${API_KEY}&language=en-US`
     };
 
     try {
