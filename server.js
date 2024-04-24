@@ -59,6 +59,59 @@ app.get('/getMovies', async (req, res) => {
         res.status(500).json({ message: "Unable to fetch movies from the database", error: error.toString() });
     }
 });
+// Route to update data on database
+app.put('/update/:id' , async (req , res) => {
+    const movieId = req.params.id;
+    const {title, overview, release_date, poster_path, comment} = req.body;
+    const sql = `UPDATE movie SET title = $1, overview = $2, release_date = $3, poster_path = $4, comment = $5 WHERE id = $6`;
+    const values = [title, overview, release_date, poster_path, comment, movieId];
+    client.query(sql , values) 
+    .then(result => {
+        res.send('Meow Suceefully updated') 
+    })
+    .catch(error => {
+        console.log("Meow Error" + error);
+        res.status(500).json({ message: "Unable to update movie", error: error.toString() });
+})})
+
+//Route to delete movies from the database
+app.delete('/deleteMovies/:id', async (req, res) => {
+    const movieId = req.params.id;
+    try {
+        // Define the SQL query to select movies from the database
+        const sql = 'DELETE FROM movie WHERE id = $1';
+        const values = [movieId];
+
+        // Execute the query
+        const result = await client.query(sql , values);
+
+        // Send the retrieved movies as a response
+        res.send("Secussfuly Deleted");
+    } catch (error) {
+        // Handle any errors that occur during the query execution
+        console.error("Error Deleting movies from the database:", error);
+        res.status(500).json({ message: "Unable to Delete movies from the database", error: error.toString() });
+    }
+});
+
+//Route to Get Data By ID
+app.get('/getMovie/:id' , async(req, res) => {
+    const movieId = req.params.id;
+    try {
+        const sql = 'SELECT * FROM movie WHERE id = $1';
+        const values = [movieId];
+        const result = await client.query(sql, values);
+        if (result.rows.length === 0) {
+            return res.status(404).json({message: "Movie not found"});
+        }
+        const movie = result.rows[0];
+        res.status(200).json(movie);
+    } catch (error) {
+        console.error("Error fetching movie from the database:", error);
+        res.status(500).json({message: "Unable to fetch movie from the database"})
+    }
+});
+
 
 
 // Route to get trending movies
