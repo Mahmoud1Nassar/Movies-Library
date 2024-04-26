@@ -2,9 +2,19 @@
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
-
+const bodyParser = require('body-parser');
 // Create an instance of express
 const app = express();
+
+//bodyParser json part
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+const { Client } = require('pg');
+const url = 'postgres://chidori:0000@localhost:5432/meow';
+const client = new Client(url);
+
+
 
 // Define the port number
 const PORT = process.env.PORT || 3000;
@@ -12,8 +22,98 @@ const PORT = process.env.PORT || 3000;
 const BASE_URL = 'https://api.themoviedb.org/3';
 // Bearer token from .env file
 const API_KEY = process.env.API_KEY;
-//search bar
-const SEARCH_BARR = 'JACK+Reacher';
+
+// Route Add Movie to Database
+app.post('/addMovie', async (req, res) => {
+    const { title, overview, release_date, poster_path, comment } = req.body;
+    const sql = `INSERT INTO movie (title, overview, release_date, poster_path, comment) VALUES($1, $2, $3, $4, $5);`;
+    const values = [title, overview, release_date, poster_path, comment];
+    client.query(sql, values)
+        .then(result => {
+            console.log(result.rows); // Logging the inserted rows
+            res.status(200).json({ message: "Movie added successfully" });
+        })
+        .catch(error => {
+            console.log("Meow Error" + error);
+            res.status(500).json({ message: "Unable to add movie", error: error.toString() });
+        });
+});
+
+// Route to get movies from the database
+app.get('/getMovies', async (req, res) => {
+    try {
+        // Define the SQL query to select movies from the database
+        const sql = 'SELECT * FROM movie';
+
+        // Execute the query
+        const result = await client.query(sql);
+
+        // Extract the rows (movies) from the result
+        const movies = result.rows;
+
+        // Send the retrieved movies as a response
+        res.status(200).json(movies);
+    } catch (error) {
+        // Handle any errors that occur during the query execution
+        console.error("Error fetching movies from the database:", error);
+        res.status(500).json({ message: "Unable to fetch movies from the database", error: error.toString() });
+    }
+});
+// Route to update data on database
+app.put('/update/:id' , async (req , res) => {
+    const movieId = req.params.id;
+    const {title, overview, release_date, poster_path, comment} = req.body;
+    const sql = `UPDATE movie SET title = $1, overview = $2, release_date = $3, poster_path = $4, comment = $5 WHERE id = $6`;
+    const values = [title, overview, release_date, poster_path, comment, movieId];
+    client.query(sql , values) 
+    .then(result => {
+        res.send('Meow Suceefully updated') 
+    })
+    .catch(error => {
+        console.log("Meow Error" + error);
+        res.status(500).json({ message: "Unable to update movie", error: error.toString() });
+})})
+
+//Route to delete movies from the database
+app.delete('/deleteMovies/:id', async (req, res) => {
+    const movieId = req.params.id;
+    try {
+        // Define the SQL query to select movies from the database
+        const sql = 'DELETE FROM movie WHERE id = $1';
+        const values = [movieId];
+
+        // Execute the query
+        const result = await client.query(sql , values);
+
+        // Send the retrieved movies as a response
+        res.send("Secussfuly Deleted");
+    } catch (error) {
+        // Handle any errors that occur during the query execution
+        console.error("Error Deleting movies from the database:", error);
+        res.status(500).json({ message: "Unable to Delete movies from the database", error: error.toString() });
+    }
+});
+
+//Route to Get Data By ID
+app.get('/getMovie/:id' , async(req, res) => {
+    const movieId = req.params.id;
+    try {
+        const sql = 'SELECT * FROM movie WHERE id = $1';
+        const values = [movieId];
+        const result = await client.query(sql, values);
+        if (result.rows.length === 0) {
+            return res.status(404).json({message: "Movie not found"});
+        }
+        const movie = result.rows[0];
+        res.status(200).json(movie);
+    } catch (error) {
+        console.error("Error fetching movie from the database:", error);
+        res.status(500).json({message: "Unable to fetch movie from the database"})
+    }
+});
+
+
+
 // Route to get trending movies
 app.get('/trending', async (req, res) => {
     const config = {
@@ -35,19 +135,20 @@ app.get('/trending', async (req, res) => {
         res.status(500).json({ message: "Unable to retrieve trending movies", error: error.toString() });
     }
 });
-
+// when to serach for movies serach like that Example "http://localhost:3000/search?title=dune"
 // Route to search movies
 app.get('/search', async (req, res) => {
+    const SEARCH_BAR = req.query.title;
     const config = {
         method: 'get',
-        url: `${BASE_URL}/search/movie?query=${SEARCH_BARR}&api_key=${API_KEY}&language=en-US`
+        url: `${BASE_URL}/search/movie?query=${SEARCH_BAR}&api_key=${API_KEY}&language=en-US`
     };
 
     try {
         const response = await axios(config);
         const movies = response.data.results.map(movie => ({
             id: movie.id,
-            title: movie.title,
+            title: movie.original_title, //original_title
             release_date: movie.release_date,
             poster_path: movie.poster_path,
             overview: movie.overview
@@ -134,9 +235,10 @@ app.use((err, req, res, next) => {
     res.status(500).json({ status: 500, responseText: "Sorry, something went wrong" });
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
-
+// To connect the server
+client.connect()
+    .then(() => {
+        app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+    })
+    .catch();
 
