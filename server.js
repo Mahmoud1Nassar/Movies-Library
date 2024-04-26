@@ -78,7 +78,7 @@ app.put('/update/:id' , async (req , res) => {
 app.delete('/deleteMovies/:id', async (req, res) => {
     const movieId = req.params.id;
     try {
-        // Define the SQL query to select movies from the database
+        // Define the SQL  query to select movies from the database
         const sql = 'DELETE FROM movie WHERE id = $1';
         const values = [movieId];
 
