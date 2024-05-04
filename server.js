@@ -16,9 +16,14 @@ const Host = process.env.PG_HOST;
 const Port = process.env.PG_PORT;
 const { Client } = require('pg');
 const url = `postgres://${UserName}:${password}@${Host}:${Port}/${DataBase}`;
-const client = new Client(url);
 
-
+const client = new Client({
+    connectionString: url,
+    ssl: {
+      rejectUnauthorized: false, // This option allows connections to servers without valid certificates
+    },
+  });
+  
 
 // Define the port number
 const PORT = process.env.PORT || 3000;
@@ -239,10 +244,13 @@ app.use((err, req, res, next) => {
     res.status(500).json({ status: 500, responseText: "Sorry, something went wrong" });
 });
 
+
+
 // To connect the server
 client.connect()
     .then(() => {
         app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
     })
-    .catch();
-
+    .catch(err => {
+        console.error("Error connecting to the database:", err);
+    });
