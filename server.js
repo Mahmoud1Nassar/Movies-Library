@@ -9,9 +9,13 @@ const app = express();
 //bodyParser json part
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-
+const DataBase = process.env.PG_DATABASE;
+const UserName = process.env.PG_USER;
+const password = process.env.PG_PASSWORD;
+const Host = process.env.PG_HOST;
+const Port = process.env.PG_PORT;
 const { Client } = require('pg');
-const url = 'postgres://chidori:0000@localhost:5432/meow';
+const url = `postgres://${UserName}:${password}@${Host}:${Port}/${DataBase}`;
 const client = new Client(url);
 
 
