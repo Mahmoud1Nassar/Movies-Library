@@ -15,13 +15,11 @@ const password = process.env.PG_PASSWORD;
 const Host = process.env.PG_HOST;
 const Port = process.env.PG_PORT;
 const { Client } = require('pg');
-const url = `postgres://${UserName}:${password}@${Host}:${Port}/${DataBase}`;
+const url = `postgresql://localhost:5432/mahmoud`;
 
 const client = new Client({
-    connectionString: url,
-    ssl: {
-      rejectUnauthorized: false, // This option allows connections to servers without valid certificates
-    },
+    connectionString: url
+   
   });
   
 
@@ -236,9 +234,9 @@ app.get('/', (req, res) => {
 });
 
 // Error Handling
-// app.use((req, res) => {
-//     res.status(404).json({ status: 404, responseText: "Page not Found" });
-// });
+app.use((req, res) => {
+    res.status(404).json({ status: 404, responseText: "Page not Found" });
+});
 
 app.use((err, req, res, next) => {
     res.status(500).json({ status: 500, responseText: "Sorry, something went wrong" });
