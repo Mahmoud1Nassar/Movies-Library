@@ -15,11 +15,10 @@ const password = process.env.PG_PASSWORD;
 const Host = process.env.PG_HOST;
 const Port = process.env.PG_PORT;
 const { Client } = require('pg');
-const url = `postgresql://localhost:5432/mahmoud`;
-
+const url = `postgres://${UserName}:${password}@${Host}:${Port}/${DataBase}`;
+    
 const client = new Client({
     connectionString: url
-   
   });
   
 
