@@ -236,9 +236,9 @@ app.get('/', (req, res) => {
 });
 
 // Error Handling
-app.use((req, res) => {
-    res.status(404).json({ status: 404, responseText: "Page not Found" });
-});
+// app.use((req, res) => {
+//     res.status(404).json({ status: 404, responseText: "Page not Found" });
+// });
 
 app.use((err, req, res, next) => {
     res.status(500).json({ status: 500, responseText: "Sorry, something went wrong" });
